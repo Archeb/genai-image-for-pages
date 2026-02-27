@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const promptInput = document.getElementById('prompt');
     const modelSelect = document.getElementById('model');
     const ratioSelect = document.getElementById('aspect-ratio');
+    const resolutionSelect = document.getElementById('resolution');
 
     // Stage Elements
     const imageStage = document.getElementById('image-stage');
@@ -162,6 +163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Fill in the original prompt
                 promptInput.value = item.prompt;
                 document.getElementById('model').value = item.model;
+                if (item.resolution && resolutionSelect) resolutionSelect.value = item.resolution;
 
                 // Use as reference image (replace current reference queue)
                 const base64Parts = item.url.split(',');
@@ -254,6 +256,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const apiKey = apiKeyInput.value.trim();
         const model = modelSelect.value;
         const aspectRatio = ratioSelect.value;
+        const resolution = resolutionSelect.value;
         const prompt = promptInput.value.trim();
 
         if (!apiKey || !prompt) {
@@ -276,6 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     apiKey,
                     model,
                     aspectRatio,
+                    resolution,
                     prompt,
                     referenceImages: referenceImagesData.map(img => ({ mimeType: img.mimeType, data: img.data }))
                 })
@@ -305,6 +309,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         url: imageUrl,
                         prompt: prompt,
                         model: model,
+                        resolution: resolution,
                         filename: filename
                     });
                     renderHistory();

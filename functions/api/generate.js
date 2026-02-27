@@ -1,7 +1,7 @@
 export async function onRequestPost({ request }) {
     try {
         const data = await request.json();
-        const { apiKey, prompt, model, aspectRatio, referenceImages } = data;
+        const { apiKey, prompt, model, aspectRatio, referenceImages, resolution } = data;
 
         if (!apiKey || !prompt) {
             return new Response(JSON.stringify({ error: "API Key and Prompt are required." }), {
@@ -38,6 +38,13 @@ export async function onRequestPost({ request }) {
 
         if (aspectRatio && aspectRatio !== "1:1") {
             requestBody.generationConfig.imageConfig = { aspectRatio };
+        }
+
+        if (resolution) {
+            if (!requestBody.generationConfig.imageConfig) {
+                requestBody.generationConfig.imageConfig = {};
+            }
+            requestBody.generationConfig.imageConfig.imageSize = resolution;
         }
 
         const res = await fetch(endpoint, {
