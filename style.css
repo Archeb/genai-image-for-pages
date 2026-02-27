@@ -134,6 +134,7 @@ body {
     display: flex;
     gap: 12px;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 input,
@@ -555,5 +556,23 @@ textarea:focus {
     .history-sidebar {
         width: 100%;
         min-height: 300px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .settings {
+        width: 100%;
+    }
+
+    .settings>* {
+        flex: 1 1 100%;
+    }
+
+    .prompt-area {
+        flex-direction: column;
+    }
+
+    .prompt-area button {
+        padding: 16px;
+        flex-direction: row;
     }
 }
