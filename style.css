@@ -450,6 +450,7 @@ textarea:focus {
     overflow: hidden;
     transition: transform 0.2s, border-color 0.2s;
     position: relative;
+    flex-shrink: 0;
 }
 
 .history-item:hover {
