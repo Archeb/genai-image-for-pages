@@ -14,63 +14,84 @@
         <div class="globe globe-1"></div>
         <div class="globe globe-2"></div>
     </div>
-    <div class="container">
-        <header>
-            <h1>Gemini Image Studio</h1>
-            <p>Generate stunning AI images using Google's Gemini models</p>
-        </header>
 
-        <main>
-            <form id="generate-form">
-                <div class="input-group">
-                    <label for="api-key">Gemini API Key</label>
-                    <input type="password" id="api-key" placeholder="Enter your API key" required>
+    <div class="app-container">
+        <!-- Center/Left Content: Controls, Large Image, Prompt -->
+        <main class="main-content glass-panel">
+            <header class="top-bar">
+                <div class="brand">
+                    <h1>Gemini Image Studio</h1>
                 </div>
-
-                <div class="row">
-                    <div class="input-group">
-                        <label for="model">Model</label>
-                        <select id="model">
-                            <option value="gemini-3.1-flash-image-preview">Gemini 3.1 Flash Image Preview</option>
-                            <option value="gemini-2.5-flash-image">Gemini 2.5 Flash Image</option>
-                        </select>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="aspect-ratio">Aspect Ratio</label>
-                        <select id="aspect-ratio">
-                            <option value="1:1">1:1 (Square)</option>
-                            <option value="16:9">16:9 (Landscape)</option>
-                            <option value="9:16">9:16 (Portrait)</option>
-                            <option value="4:3">4:3 (Landscape)</option>
-                            <option value="3:4">3:4 (Portrait)</option>
-                        </select>
-                    </div>
+                <div class="settings">
+                    <input type="password" id="api-key" placeholder="Enter Gemini API Key" required>
+                    <select id="model">
+                        <option value="gemini-3.1-flash-image-preview">Gemini 3.1 Flash Image Preview</option>
+                        <option value="gemini-2.5-flash-image">Gemini 2.5 Flash Image</option>
+                    </select>
+                    <select id="aspect-ratio">
+                        <option value="1:1">1:1 (Square)</option>
+                        <option value="16:9">16:9 (Landscape)</option>
+                        <option value="9:16">9:16 (Portrait)</option>
+                    </select>
                 </div>
+            </header>
 
-                <div class="input-group">
-                    <label for="prompt">Image Prompt</label>
-                    <textarea id="prompt" rows="4" placeholder="Describe the image you want to generate in detail..."
-                        required></textarea>
+            <div class="image-stage" id="image-stage">
+                <div class="empty-state" id="empty-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <p>Your generated masterpiece will appear here</p>
                 </div>
-
-                <button type="submit" id="generate-btn">
-                    <span class="btn-text">Inspire Creation</span>
-                    <div class="spinner loader-hidden" id="loader"></div>
-                </button>
-            </form>
-
-            <div class="result-container hidden" id="result-container">
-                <div class="image-wrapper" id="image-wrapper">
-                    <!-- Image will be injected here -->
+                <img id="main-image" class="hidden" alt="Generated Image">
+                <div class="overlay-controls hidden" id="main-image-controls">
+                    <a id="main-download-btn" class="icon-btn" title="Download">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    </a>
                 </div>
-                <div class="actions">
-                    <a id="download-btn" class="secondary-btn" download="gemini_image.jpg">Download Image</a>
+                <div class="loading-overlay hidden" id="loading-overlay">
+                    <div class="spinner"></div>
+                    <p id="loading-text">Dreaming...</p>
                 </div>
             </div>
 
             <div id="error-message" class="error-hidden"></div>
+
+            <div class="prompt-area">
+                <textarea id="prompt" rows="3" placeholder="Describe the image you want to generate in detail..."
+                    required></textarea>
+                <button type="button" id="generate-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Generate</span>
+                </button>
+            </div>
         </main>
+
+        <!-- Right Content: History Sidebar -->
+        <aside class="history-sidebar glass-panel">
+            <header class="sidebar-header">
+                <h2>Creation History</h2>
+                <button id="clear-all-btn" class="text-btn" title="Clear All History">Clear All</button>
+            </header>
+
+            <div class="history-list" id="history-list">
+                <!-- History items will be dynamically injected here -->
+                <div class="history-empty" id="history-empty">
+                    <p>No history yet.</p>
+                </div>
+            </div>
+        </aside>
     </div>
 
     <script src="script.js"></script>
