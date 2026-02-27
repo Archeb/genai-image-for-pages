@@ -88,6 +88,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const historyEmpty = document.getElementById('history-empty');
     const clearAllBtn = document.getElementById('clear-all-btn');
 
+    // Reference Images Elements
+    const referenceImagesInput = document.getElementById('reference-images');
+    const referencePreview = document.getElementById('reference-preview');
+    let referenceImagesData = [];
+
     // Init DB & Load state
     try {
         await initDB();
@@ -181,6 +186,53 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    referenceImagesInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (referenceImagesData.length + files.length > 3) {
+            alert("You can only upload up to 3 reference images.");
+            return;
+        }
+
+        for (const file of files) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            await new Promise(resolve => {
+                reader.onload = () => {
+                    const base64String = reader.result.split(',')[1];
+                    const mimeType = file.type;
+                    referenceImagesData.push({ mimeType, data: base64String, src: reader.result });
+                    resolve();
+                }
+            });
+        }
+        renderReferencePreview();
+        // reset input
+        referenceImagesInput.value = '';
+    });
+
+    function renderReferencePreview() {
+        referencePreview.innerHTML = '';
+        referenceImagesData.forEach((img, index) => {
+            const container = document.createElement('div');
+            container.className = 'ref-thumb-container';
+
+            const imgEl = document.createElement('img');
+            imgEl.src = img.src;
+
+            const removeBtn = document.createElement('div');
+            removeBtn.className = 'ref-thumb-remove';
+            removeBtn.innerHTML = '×';
+            removeBtn.onclick = () => {
+                referenceImagesData.splice(index, 1);
+                renderReferencePreview();
+            };
+
+            container.appendChild(imgEl);
+            container.appendChild(removeBtn);
+            referencePreview.appendChild(container);
+        });
+    }
+
     generateBtn.addEventListener('click', async () => {
         const apiKey = apiKeyInput.value.trim();
         const model = modelSelect.value;
@@ -203,7 +255,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             const response = await fetch('/api/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ apiKey, model, aspectRatio, prompt })
+                body: JSON.stringify({
+                    apiKey,
+                    model,
+                    aspectRatio,
+                    prompt,
+                    referenceImages: referenceImagesData.map(img => ({ mimeType: img.mimeType, data: img.data }))
+                })
             });
 
             const data = await response.json();
@@ -235,8 +293,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     renderHistory();
                 }
 
-                // Auto-clear prompt on success to encourage next gen
+                // Auto-clear prompt and references on success to encourage next gen
                 promptInput.value = '';
+                referenceImagesData = [];
+                renderReferencePreview();
 
             } else if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
                 throw new Error("Model returned text. Ensure you are using the correct Image model.");

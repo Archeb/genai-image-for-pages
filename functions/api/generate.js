@@ -1,7 +1,7 @@
 export async function onRequestPost({ request }) {
     try {
         const data = await request.json();
-        const { apiKey, prompt, model, aspectRatio } = data;
+        const { apiKey, prompt, model, aspectRatio, referenceImages } = data;
 
         if (!apiKey || !prompt) {
             return new Response(JSON.stringify({ error: "API Key and Prompt are required." }), {
@@ -13,10 +13,22 @@ export async function onRequestPost({ request }) {
         const geminiModel = model || "gemini-3.1-flash-image-preview";
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`;
 
+        const parts = [{ text: prompt }];
+        if (referenceImages && referenceImages.length > 0) {
+            referenceImages.forEach(img => {
+                parts.push({
+                    inlineData: {
+                        mimeType: img.mimeType,
+                        data: img.data
+                    }
+                });
+            });
+        }
+
         const requestBody = {
             contents: [
                 {
-                    parts: [{ text: prompt }]
+                    parts: parts
                 }
             ],
             generationConfig: {
