@@ -206,13 +206,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     referenceImagesInput.addEventListener('change', async (e) => {
-        const files = Array.from(e.target.files);
-        if (referenceImagesData.length + files.length > 3) {
+        await handleReferenceFiles(Array.from(e.target.files));
+        referenceImagesInput.value = '';
+    });
+
+    // Drag and drop support
+    const promptInputWrapper = document.querySelector('.prompt-input-wrapper');
+
+    promptInputWrapper.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        promptInputWrapper.classList.add('drag-active');
+    });
+
+    promptInputWrapper.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        promptInputWrapper.classList.remove('drag-active');
+    });
+
+    promptInputWrapper.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        promptInputWrapper.classList.remove('drag-active');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            await handleReferenceFiles(Array.from(e.dataTransfer.files));
+        }
+    });
+
+    async function handleReferenceFiles(files) {
+        // filter images
+        const imageFiles = files.filter(f => f.type.startsWith('image/'));
+        if (imageFiles.length === 0) return;
+
+        if (referenceImagesData.length + imageFiles.length > 3) {
             alert("You can only upload up to 3 reference images.");
             return;
         }
 
-        for (const file of files) {
+        for (const file of imageFiles) {
             const reader = new FileReader();
             reader.readAsDataURL(file);
             await new Promise(resolve => {
@@ -225,9 +254,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
         renderReferencePreview();
-        // reset input
-        referenceImagesInput.value = '';
-    });
+    }
 
     function renderReferencePreview() {
         referencePreview.innerHTML = '';

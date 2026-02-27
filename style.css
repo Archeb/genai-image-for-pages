@@ -265,6 +265,12 @@ textarea:focus {
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 
+.prompt-input-wrapper.drag-active {
+    border-color: var(--gradient-1);
+    background: rgba(139, 92, 246, 0.1);
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
+}
+
 .prompt-area textarea {
     width: 100%;
     resize: none;
