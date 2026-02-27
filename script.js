@@ -158,159 +158,164 @@ document.addEventListener('DOMContentLoaded', async () => {
                 setDisplayImage(item.url, item.filename);
                 // Also visually scroll top
                 document.getElementById('image-stage').scrollIntoView({ behavior: 'smooth' });
-            });
 
-            // Delete
-            el.querySelector('.delete-btn').addEventListener('click', async (e) => {
-                e.stopPropagation();
-                if (confirm('Delete this image?')) {
-                    await deleteFromHistory(item.id);
-                    renderHistory();
+                // Fill in the original prompt
+                promptInput.value = item.prompt;
+                document.getElementById('model').value = item.model;
+
+                // Use as reference image (replace current reference queue)
+                const base64Parts = item.url.split(',');
+                if (base64Parts.length === 2) {
+                    const mimeType = base64Parts[0].split(':')[1].split(';')[0];
+                    const base64Data = base64Parts[1];
+                    referenceImagesData = [{
+                        mimeType: mimeType,
+                        data: base64Data,
+                        src: item.url
+                    }];
+                    renderReferencePreview();
                 }
             });
-
-            historyList.appendChild(el);
-        });
-    }
+        }
 
     clearAllBtn.addEventListener('click', async () => {
-        if (confirm('Are you sure you want to clear all history?')) {
-            await clearAllHistoryDB();
-            renderHistory();
+            if (confirm('Are you sure you want to clear all history?')) {
+                await clearAllHistoryDB();
+                renderHistory();
 
-            // Reset main stage
-            mainImage.classList.add('hidden');
-            mainImageControls.classList.add('hidden');
-            emptyState.classList.remove('hidden');
-            mainImage.src = '';
-        }
-    });
-
-    referenceImagesInput.addEventListener('change', async (e) => {
-        const files = Array.from(e.target.files);
-        if (referenceImagesData.length + files.length > 3) {
-            alert("You can only upload up to 3 reference images.");
-            return;
-        }
-
-        for (const file of files) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            await new Promise(resolve => {
-                reader.onload = () => {
-                    const base64String = reader.result.split(',')[1];
-                    const mimeType = file.type;
-                    referenceImagesData.push({ mimeType, data: base64String, src: reader.result });
-                    resolve();
-                }
-            });
-        }
-        renderReferencePreview();
-        // reset input
-        referenceImagesInput.value = '';
-    });
-
-    function renderReferencePreview() {
-        referencePreview.innerHTML = '';
-        referenceImagesData.forEach((img, index) => {
-            const container = document.createElement('div');
-            container.className = 'ref-thumb-container';
-
-            const imgEl = document.createElement('img');
-            imgEl.src = img.src;
-
-            const removeBtn = document.createElement('div');
-            removeBtn.className = 'ref-thumb-remove';
-            removeBtn.innerHTML = '×';
-            removeBtn.onclick = () => {
-                referenceImagesData.splice(index, 1);
-                renderReferencePreview();
-            };
-
-            container.appendChild(imgEl);
-            container.appendChild(removeBtn);
-            referencePreview.appendChild(container);
+                // Reset main stage
+                mainImage.classList.add('hidden');
+                mainImageControls.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                mainImage.src = '';
+            }
         });
-    }
 
-    generateBtn.addEventListener('click', async () => {
-        const apiKey = apiKeyInput.value.trim();
-        const model = modelSelect.value;
-        const aspectRatio = ratioSelect.value;
-        const prompt = promptInput.value.trim();
-
-        if (!apiKey || !prompt) {
-            alert("Please provide both API Key and a Prompt.");
-            return;
-        }
-
-        localStorage.setItem('gemini_api_key', apiKey);
-
-        // UI State: Loading
-        generateBtn.disabled = true;
-        loadingOverlay.classList.remove('hidden');
-        errorMsg.classList.add('error-hidden');
-
-        try {
-            const response = await fetch('/api/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    apiKey,
-                    model,
-                    aspectRatio,
-                    prompt,
-                    referenceImages: referenceImagesData.map(img => ({ mimeType: img.mimeType, data: img.data }))
-                })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                const errDetail = data.error?.message || data.error || "Unknown error occurred";
-                throw new Error(errDetail);
+        referenceImagesInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            if (referenceImagesData.length + files.length > 3) {
+                alert("You can only upload up to 3 reference images.");
+                return;
             }
 
-            if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0].inlineData) {
-                const mimeType = data.candidates[0].content.parts[0].inlineData.mimeType;
-                const base64Data = data.candidates[0].content.parts[0].inlineData.data;
-                const imageUrl = `data:${mimeType};base64,${base64Data}`;
-                const filename = `gemini_${Date.now()}.jpg`;
+            for (const file of files) {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                await new Promise(resolve => {
+                    reader.onload = () => {
+                        const base64String = reader.result.split(',')[1];
+                        const mimeType = file.type;
+                        referenceImagesData.push({ mimeType, data: base64String, src: reader.result });
+                        resolve();
+                    }
+                });
+            }
+            renderReferencePreview();
+            // reset input
+            referenceImagesInput.value = '';
+        });
 
-                // Show generated image
-                setDisplayImage(imageUrl, filename);
+        function renderReferencePreview() {
+            referencePreview.innerHTML = '';
+            referenceImagesData.forEach((img, index) => {
+                const container = document.createElement('div');
+                container.className = 'ref-thumb-container';
 
-                // Save to IndexedDB history
-                if (db) {
-                    await saveToHistory({
-                        id: Date.now().toString(),
-                        timestamp: Date.now(),
-                        url: imageUrl,
-                        prompt: prompt,
-                        model: model,
-                        filename: filename
-                    });
-                    renderHistory();
+                const imgEl = document.createElement('img');
+                imgEl.src = img.src;
+
+                const removeBtn = document.createElement('div');
+                removeBtn.className = 'ref-thumb-remove';
+                removeBtn.innerHTML = '×';
+                removeBtn.onclick = () => {
+                    referenceImagesData.splice(index, 1);
+                    renderReferencePreview();
+                };
+
+                container.appendChild(imgEl);
+                container.appendChild(removeBtn);
+                referencePreview.appendChild(container);
+            });
+        }
+
+        generateBtn.addEventListener('click', async () => {
+            const apiKey = apiKeyInput.value.trim();
+            const model = modelSelect.value;
+            const aspectRatio = ratioSelect.value;
+            const prompt = promptInput.value.trim();
+
+            if (!apiKey || !prompt) {
+                alert("Please provide both API Key and a Prompt.");
+                return;
+            }
+
+            localStorage.setItem('gemini_api_key', apiKey);
+
+            // UI State: Loading
+            generateBtn.disabled = true;
+            loadingOverlay.classList.remove('hidden');
+            errorMsg.classList.add('error-hidden');
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        apiKey,
+                        model,
+                        aspectRatio,
+                        prompt,
+                        referenceImages: referenceImagesData.map(img => ({ mimeType: img.mimeType, data: img.data }))
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    const errDetail = data.error?.message || data.error || "Unknown error occurred";
+                    throw new Error(errDetail);
                 }
 
-                // Auto-clear prompt and references on success to encourage next gen
-                promptInput.value = '';
-                referenceImagesData = [];
-                renderReferencePreview();
+                if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0].inlineData) {
+                    const mimeType = data.candidates[0].content.parts[0].inlineData.mimeType;
+                    const base64Data = data.candidates[0].content.parts[0].inlineData.data;
+                    const imageUrl = `data:${mimeType};base64,${base64Data}`;
+                    const filename = `gemini_${Date.now()}.jpg`;
 
-            } else if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-                throw new Error("Model returned text. Ensure you are using the correct Image model.");
-            } else {
-                throw new Error("No image data found in response.");
+                    // Show generated image
+                    setDisplayImage(imageUrl, filename);
+
+                    // Save to IndexedDB history
+                    if (db) {
+                        await saveToHistory({
+                            id: Date.now().toString(),
+                            timestamp: Date.now(),
+                            url: imageUrl,
+                            prompt: prompt,
+                            model: model,
+                            filename: filename
+                        });
+                        renderHistory();
+                    }
+
+                    // Auto-clear prompt and references on success to encourage next gen
+                    promptInput.value = '';
+                    referenceImagesData = [];
+                    renderReferencePreview();
+
+                } else if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                    throw new Error("Model returned text. Ensure you are using the correct Image model.");
+                } else {
+                    throw new Error("No image data found in response.");
+                }
+
+            } catch (error) {
+                errorMsg.textContent = error.message;
+                errorMsg.classList.remove('error-hidden');
+            } finally {
+                // UI State: Rest
+                generateBtn.disabled = false;
+                loadingOverlay.classList.add('hidden');
             }
-
-        } catch (error) {
-            errorMsg.textContent = error.message;
-            errorMsg.classList.remove('error-hidden');
-        } finally {
-            // UI State: Rest
-            generateBtn.disabled = false;
-            loadingOverlay.classList.add('hidden');
-        }
+        });
     });
-});
